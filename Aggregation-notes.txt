@@ -1,0 +1,62 @@
+Aggregation Syntax:
+Model.aggregate([
+  // Stage 1
+  {},
+  // Stage 2
+  {}
+]);
+
+// Different Stages
+
+1) Match Stage : { $match: { /* Filter Query */ }}
+
+2) Group Stage: 
+      Type 1       { $group: { "_id": "Aggregation expression" } }
+      Type 2       { $group: { "_id": { name: "$name", age: "$age" } } }   // multiple group conditions
+      #Example     { $group: { _id: { age: "$age" },  humans: { $push: "$$ROOT" } } }  // group by age and add them into humans variable
+
+  3) Count Stage:  { $count: "persons" }
+  
+  4) Sort Stage 
+      Type 1      { $sort: { field1: 1/-1 } },
+      Type 2      { $sort: { field1: 1/-1, field2: 1/-1} }
+
+  5) Project Stage 
+      Type 1      { $project: { name: 1, _id: 0 } }
+      Type 2      { $project: { newName: "$name", newId: "$_id" } }
+      Type 3      { $project: { basicInfo: { name: "$name", isActive: "$isActive" } } }
+
+  6) Limit Stage: { $limit: 5 }
+
+  7) Unwind Stage: Splits each document with specified array to several documents - one document per array element.
+    Syntax: { $Unwind: "<ArrayReferenceExpression>"}
+
+  8) Accumulator Operators
+      Syntax: 
+                { $group: { _id: "$age", totalAge: { $sum: 1 } }} // Will return the count of documents in each group
+                { $group: { _id: "$age", totalAge: { $sum: "$age" } }}, // Will return the group wise sum of ages 
+
+  9) Unary Operators : { type, lt, gt, and, or, multiply } 
+
+  10) Facet: One part of a subject Processes multiple aggregations pipeline within a single stage on same input document.
+      // Example 1, Using facet to execute multiple stage with 
+      db.getCollection('persons').aggregate([
+          { 
+              $facet: {
+                  countOfFemale: [{ $match: { "gender" : "female" } }, { $count: "count" }],
+                  countOfMale: [{ $match: { "gender" : "male" } }, { $count: "count" }]
+              } 
+          }
+      ]);
+
+
+  // Example 2 With pagination
+      db.getCollection('persons').aggregate([
+          { 
+              $facet: {
+                  allFemales: [{ $match: { "gender" : "female" } }, { $project: { name: 1 } }, { $skip: 10 }, {$limit: 10}],
+                  countOfFemale: [{ $match: { "gender" : "female" } }, { $count: "count" }]
+              } 
+          }
+      ])
+
